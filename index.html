@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#050b16">
+<link rel="manifest" href="manifest.webmanifest">
+<title>ARES AI</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+margin:0;
+padding:25px 15px;
+background:#050b16;
+color:white;
+font-family:Arial,sans-serif;
+text-align:center;
+}
+h1{
+font-size:55px;
+letter-spacing:10px;
+color:#35aaff;
+text-shadow:0 0 20px #168cff;
+margin-top:45px;
+}
+.subtitle{color:#8baac8}
+#status{color:#35aaff;margin:20px}
+#chat{
+max-width:500px;
+height:300px;
+overflow-y:auto;
+margin:20px auto;
+padding:15px;
+background:#081426;
+border:1px solid #17639b;
+border-radius:15px;
+text-align:left;
+}
+.msg{margin:12px 0;line-height:1.5}
+.user{color:#8bd2ff}
+.ares{color:white}
+.controls{
+max-width:500px;
+margin:auto;
+display:flex;
+gap:8px;
+}
+input{
+flex:1;
+min-width:0;
+padding:14px;
+border-radius:10px;
+background:#0b1d33;
+color:white;
+border:1px solid #246da5;
+font-size:16px;
+}
+button{
+padding:13px;
+border:0;
+border-radius:10px;
+background:#087ac2;
+color:white;
+font-size:15px;
+}
+.mic{
+margin-top:12px;
+width:100%;
+max-width:500px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>ARES</h1>
+<div class="subtitle">PERSONAL AI ASSISTANT</div>
+<div id="status">SİSTEM HAZIR</div>
+
+<div id="chat">
+<div class="msg ares">
+ARES: Merhaba! Ben ARES. Sana nasıl yardımcı olabilirim?
+</div>
+</div>
+
+<div class="controls">
+<input id="question" placeholder="ARES'e bir şey sor...">
+<button onclick="sendMessage()">Gönder</button>
+</div>
+
+<button class="mic" onclick="listen()">🎙️ Sesli konuş</button>
+
+<script>
+const chat=document.getElementById("chat");
+const input=document.getElementById("question");
+const statusText=document.getElementById("status");
+
+function addMessage(type,text){
+const div=document.createElement("div");
+div.className="msg "+type;
+div.textContent=(type==="user"?"Sen: ":"ARES: ")+text;
+chat.appendChild(div);
+chat.scrollTop=chat.scrollHeight;
+}
+
+function speak(text){
+if(!("speechSynthesis" in window))return;
+speechSynthesis.cancel();
+const voice=new SpeechSynthesisUtterance(text);
+voice.lang="tr-TR";
+speechSynthesis.speak(voice);
+}
+
+function replyTo(text){
+const q=text.toLocaleLowerCase("tr-TR");
+
+if(q.includes("merhaba")||q.includes("selam"))
+return "Merhaba! Seni dinliyorum.";
+
+if(q.includes("adın"))
+return "Benim adım ARES.";
+
+if(q.includes("saat"))
+return "Saat "+new Date().toLocaleTimeString("tr-TR");
+
+if(q.includes("tarih"))
+return "Bugünün tarihi "+new Date().toLocaleDateString("tr-TR");
+
+if(q.includes("nasılsın"))
+return "İyiyim, teşekkür ederim. Sana nasıl yardımcı olabilirim?";
+
+if(q.includes("kimsin"))
+return "Ben ARES, kişisel asistanınım.";
+
+if(q.includes("teşekkür"))
+return "Rica ederim. Her zaman yardımcı olmaya hazırım.";
+
+return "Mesajını aldım. Henüz gerçek yapay zekâ bağlantım bulunmuyor.";
+}
+
+function sendMessage(){
+const text=input.value.trim();
+if(!text)return;
+
+addMessage("user",text);
+input.value="";
+
+const answer=replyTo(text);
+addMessage("ares",answer);
+speak(answer);
+}
+
+input.addEventListener("keydown",function(e){
+if(e.key==="Enter")sendMessage();
+});
+
+function listen(){
+const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+
+if(!Recognition){
+statusText.textContent="Ses tanıma bu tarayıcıda desteklenmiyor.";
+return;
+}
+
+const recognition=new Recognition();
+recognition.lang="tr-TR";
+recognition.interimResults=false;
+
+statusText.textContent="SENİ DİNLİYORUM...";
+
+recognition.onresult=function(event){
+input.value=event.results[0][0].transcript;
+statusText.textContent="SES ALGILANDI";
+sendMessage();
+};
+
+recognition.onerror=function(){
+statusText.textContent="Ses tanıma hatası. Tekrar dene.";
+};
+
+recognition.onend=function(){
+if(statusText.textContent==="SENİ DİNLİYORUM...")
+statusText.textContent="SİSTEM HAZIR";
+};
+
+recognition.start();
+}
+
+if("serviceWorker" in navigator){
+window.addEventListener("load",function(){
+navigator.serviceWorker.register("./sw.js").catch(function(){});
+});
+}
+</script>
+
+</body>
+  </html>
